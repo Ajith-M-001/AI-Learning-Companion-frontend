@@ -170,26 +170,29 @@ export function SignUpForm() {
               <Controller
                 name="firstName"
                 control={control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={!!fieldState.error}>
-                    <FieldLabel htmlFor="firstName">
-                      First Name <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <Input
-                      ref={(e) => {
-                        field.ref(e);
-                        if (!firstInputRef.current) firstInputRef.current = e;
-                      }}
-                      id="firstName"
-                      placeholder="John"
-                      {...field}
-                      aria-invalid={!!fieldState.error}
-                      autoComplete="given-name"
-                      className="h-11 transition-all focus:ring-2"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
+                render={({ field, fieldState }) => {
+                  const { ref, ...rest } = field;
+                  return (
+                    <Field data-invalid={!!fieldState.error}>
+                      <FieldLabel htmlFor="firstName">
+                        First Name <span className="text-destructive">*</span>
+                      </FieldLabel>
+                      <Input
+                        {...rest}
+                        id="firstName"
+                        placeholder="John"
+                        ref={(e) => {
+                          ref(e);
+                          if (!firstInputRef.current) firstInputRef.current = e;
+                        }}
+                        aria-invalid={!!fieldState.error}
+                        autoComplete="given-name"
+                        className="h-11 transition-all focus:ring-2"
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  );
+                }}
               />
 
               {/* Last Name */}
@@ -340,7 +343,6 @@ export function SignUpForm() {
                         <li
                           key={item.label}
                           className="flex items-center space-x-2 text-xs"
-                          role="status"
                           aria-label={`${item.label}: ${item.valid ? "met" : "not met"}`}
                         >
                           {item.valid ? (
