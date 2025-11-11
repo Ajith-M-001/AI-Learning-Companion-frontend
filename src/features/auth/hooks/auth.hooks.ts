@@ -19,7 +19,7 @@ export const useSignUp = (options = {}) => {
     },
     onError: (error) => {
       console.log(error);
-      toast.error(error.response?.data.detail || "Sign up failed");
+      // toast.error(error.response?.data.detail || "Sign up failed");
     },
     ...options,
   });
@@ -35,7 +35,7 @@ export const useSignIn = (options = {}) => {
     },
     onError: (error) => {
       console.log(error);
-      toast.error(error.response?.data.detail || "Sign in failed");
+      // toast.error(error.response?.data.detail || "Sign in failed");
     },
     ...options,
   });
