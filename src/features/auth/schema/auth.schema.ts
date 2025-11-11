@@ -86,22 +86,27 @@ export const loginIdSchema = baseString()
       emailSchema.safeParse(val).success,
     { message: "Must be a valid username or email" }
   );
+
+export const acceptTermsSchema = z.boolean().refine((val) => val === true, {
+  message: "You must accept the terms and conditions",
+});
+
 export const signInSchema = z.object({
-  loginId: loginIdSchema,
+  username: loginIdSchema,
   password: PasswordSchema,
 });
 
-export const signUpSchema = z.object({
-  firstName: firstNameSchema,
-  lastName: lastNameSchema,
-  username: usernameSchema,
-  email: emailSchema,
-  password: PasswordSchema,
-});
-
-// Extended schema with terms acceptance for the form
-export const signUpSchemaWithTerms = signUpSchema.extend({
-  acceptTerms: z.boolean().refine((val) => val === true, {
-    message: "You must accept the terms and conditions",
-  }),
-});
+export const signUpSchema = z
+  .object({
+    firstName: firstNameSchema,
+    lastName: lastNameSchema,
+    username: usernameSchema,
+    email: emailSchema,
+    password: PasswordSchema,
+    acceptTerms: acceptTermsSchema,
+    confirmPassword: PasswordSchema,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });

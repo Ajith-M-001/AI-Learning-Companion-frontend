@@ -1,216 +1,118 @@
 "use client";
-
-import { useState, useMemo, useEffect, useRef } from "react";
+import type { SignUpFormData } from "../types/auth.types";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
 import { signUpSchema } from "../schema/auth.schema";
-
-import { CheckCircle2, XCircle, Loader2, Info } from "lucide-react";
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Loader2, Sparkles } from "lucide-react";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldDescription,
 } from "@/components/ui/field";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-
-// Extended schema with terms acceptance
-const signUpSchemaExtended = signUpSchema.extend({
-  acceptTerms: z.boolean().refine((val) => val === true, {
-    message: "You must accept the terms and conditions",
-  }),
-});
-
-type SignUpFormData = z.infer<typeof signUpSchemaExtended>;
-
-// Password strength utilities
-function getPasswordCriteria(password: string) {
-  return {
-    hasMinLength: password.length >= 8,
-    hasUppercase: /[A-Z]/.test(password),
-    hasLowercase: /[a-z]/.test(password),
-    hasNumber: /\d/.test(password),
-    hasSpecial: /[^A-Za-z0-9]/.test(password),
-  };
-}
-
-function getPasswordStrengthScore(criteria: Record<string, boolean>) {
-  return Object.values(criteria).reduce(
-    (acc, valid) => acc + (valid ? 1 : 0),
-    0,
-  );
-}
-
-function getPasswordStrengthConfig(score: number) {
-  if (score <= 2)
-    return {
-      label: "Weak",
-      color: "bg-red-500",
-      textColor: "text-red-600",
-      width: "w-1/3",
-    };
-  if (score <= 4)
-    return {
-      label: "Moderate",
-      color: "bg-yellow-500",
-      textColor: "text-yellow-600",
-      width: "w-2/3",
-    };
-  return {
-    label: "Strong",
-    color: "bg-green-500",
-    textColor: "text-green-600",
-    width: "w-full",
-  };
-}
-
+import { Checkbox } from "@/components/ui/checkbox";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useSignUp } from "../hooks/auth.hooks";
 export function SignUpForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const firstInputRef = useRef<HTMLInputElement | null>(null);
-
   const {
     control,
     handleSubmit,
+    formState,
+    reset,
+    getValues,
+    setValue,
     watch,
-    formState: { errors, isValid, isDirty },
   } = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchemaExtended),
-    mode: "onChange",
+    resolver: zodResolver(signUpSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
       username: "",
       email: "",
       password: "",
+      confirmPassword: "",
       acceptTerms: false,
     },
   });
 
-  // Auto-focus first input
-  useEffect(() => {
-    firstInputRef.current?.focus();
-  }, []);
+  const { mutate: signUp, isPending: isSignUpPending } = useSignUp();
 
-  const password = watch("password", "");
-  const acceptTerms = watch("acceptTerms", false);
-
-  // Memoized password calculations
-  const passwordCriteria = useMemo(
-    () => getPasswordCriteria(password),
-    [password],
-  );
-  const allCriteriaValid = useMemo(
-    () => Object.values(passwordCriteria).every(Boolean),
-    [passwordCriteria],
-  );
-  const strengthScore = useMemo(
-    () => getPasswordStrengthScore(passwordCriteria),
-    [passwordCriteria],
-  );
-  const strengthConfig = useMemo(
-    () => getPasswordStrengthConfig(strengthScore),
-    [strengthScore],
-  );
-
-  const onSubmit = async (data: SignUpFormData) => {
-    try {
-      setIsSubmitting(true);
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 2000));
-      console.log("Form submitted:", { ...data, password: "[REDACTED]" });
-      alert("✅ Account created successfully!");
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("❌ Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const onSubmit = (data: SignUpFormData) => {
+    signUp(data);
   };
-
   return (
-    <Card className="w-full max-w-md mx-auto shadow-2xl border-border/50 bg-card/95 backdrop-blur-sm">
-      <CardHeader className="space-y-2 text-center pb-6">
+    <Card className="w-full max-w-md  mx-auto shadow-2xl border-border/90 bg-card/95 backdrop-blur-md  ">
+      <CardHeader className="space-y-1 text-center ">
         <div className="flex justify-center mb-2">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Info className="w-6 h-6 text-primary" />
+            <Sparkles className="w-6 h-6 text-primary" />
           </div>
         </div>
-        <CardTitle className="text-3xl font-bold tracking-tight">
+        <CardTitle className="text-2xl font-bold tracking-tight">
           Create Account
         </CardTitle>
         <CardDescription className="text-base">
-          Enter your information to get started
+          Start your personalized learning journey today
         </CardDescription>
       </CardHeader>
-
       <CardContent className="px-6">
         <form
           onSubmit={handleSubmit(onSubmit)}
           noValidate
-          className="space-y-5"
+          className="space-y-6"
         >
-          <FieldGroup className="space-y-5">
-            {/* First Name & Last Name - Side by Side on Desktop */}
+          <FieldGroup>
+            {/* First/Last Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* First Name */}
               <Controller
                 name="firstName"
                 control={control}
-                render={({ field, fieldState }) => {
-                  const { ref, ...rest } = field;
-                  return (
-                    <Field data-invalid={!!fieldState.error}>
-                      <FieldLabel htmlFor="firstName">
-                        First Name <span className="text-destructive">*</span>
-                      </FieldLabel>
-                      <Input
-                        {...rest}
-                        id="firstName"
-                        placeholder="John"
-                        ref={(e) => {
-                          ref(e);
-                          if (!firstInputRef.current) firstInputRef.current = e;
-                        }}
-                        aria-invalid={!!fieldState.error}
-                        autoComplete="given-name"
-                        className="h-11 transition-all focus:ring-2"
-                      />
-                      <FieldError errors={[fieldState.error]} />
-                    </Field>
-                  );
-                }}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={!!fieldState.error}>
+                    <FieldLabel>
+                      First Name <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      placeholder="John"
+                      className="h-11"
+                      aria-invalid={!!fieldState.error}
+                      autoComplete="given-name"
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
               />
 
-              {/* Last Name */}
               <Controller
                 name="lastName"
                 control={control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={!!fieldState.error}>
-                    <FieldLabel htmlFor="lastName">
+                    <FieldLabel>
                       Last Name <span className="text-destructive">*</span>
                     </FieldLabel>
                     <Input
-                      id="lastName"
-                      placeholder="Doe"
                       {...field}
-                      aria-invalid={!!fieldState.error}
+                      placeholder="Doe"
                       autoComplete="family-name"
-                      className="h-11 transition-all focus:ring-2"
+                      className="h-11"
+                      aria-invalid={!!fieldState.error}
                     />
                     <FieldError errors={[fieldState.error]} />
                   </Field>
@@ -224,16 +126,15 @@ export function SignUpForm() {
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={!!fieldState.error}>
-                  <FieldLabel htmlFor="username">
+                  <FieldLabel>
                     Username <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
-                    id="username"
-                    placeholder="johndoe_123"
                     {...field}
-                    aria-invalid={!!fieldState.error}
+                    placeholder="johndoe_123"
                     autoComplete="username"
-                    className="h-11 transition-all focus:ring-2"
+                    className="h-11"
+                    aria-invalid={!!fieldState.error}
                   />
                   <FieldDescription className="text-xs">
                     Letters, numbers, and underscores only
@@ -249,150 +150,87 @@ export function SignUpForm() {
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={!!fieldState.error}>
-                  <FieldLabel htmlFor="email">
+                  <FieldLabel>
                     Email <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
-                    id="email"
+                    {...field}
                     type="email"
                     placeholder="john.doe@example.com"
-                    {...field}
-                    aria-invalid={!!fieldState.error}
                     autoComplete="email"
-                    className="h-11 transition-all focus:ring-2"
+                    className="h-11"
+                    aria-invalid={!!fieldState.error}
                   />
-                  <FieldDescription className="text-xs">
-                    We'll never share your email
-                  </FieldDescription>
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
             />
 
-            {/* Password with Enhanced UI */}
+            {/* Password */}
             <Controller
               name="password"
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={!!fieldState.error}>
-                  <FieldLabel htmlFor="password">
+                  <FieldLabel>
                     Password <span className="text-destructive">*</span>
                   </FieldLabel>
                   <PasswordInput
-                    id="password"
-                    placeholder="Create a strong password"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    aria-describedby="password-criteria password-strength"
-                    aria-invalid={!!fieldState.error}
-                    autoComplete="new-password"
+                    {...field}
+                    placeholder="Enter your password"
                     className="h-11"
+                    aria-invalid={!!fieldState.error}
                   />
-
-                  {/* Password Strength Indicator */}
-                  {password && (
-                    <div className="mt-3 space-y-2">
-                      {/* Strength Bar */}
-                      <div className="relative h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${strengthConfig.color} transition-all duration-500 ease-out ${strengthConfig.width}`}
-                        />
-                      </div>
-
-                      {/* Strength Label */}
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`text-xs font-semibold ${strengthConfig.textColor}`}
-                          id="password-strength"
-                        >
-                          Password Strength: {strengthConfig.label}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {strengthScore}/5 criteria met
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Password Criteria Checklist */}
-                  {password && (
-                    <ul id="password-criteria" className="mt-3 space-y-1.5">
-                      {[
-                        {
-                          label: "At least 8 characters",
-                          valid: passwordCriteria.hasMinLength,
-                        },
-                        {
-                          label: "One uppercase letter",
-                          valid: passwordCriteria.hasUppercase,
-                        },
-                        {
-                          label: "One lowercase letter",
-                          valid: passwordCriteria.hasLowercase,
-                        },
-                        {
-                          label: "One number",
-                          valid: passwordCriteria.hasNumber,
-                        },
-                        {
-                          label: "One special character",
-                          valid: passwordCriteria.hasSpecial,
-                        },
-                      ].map((item) => (
-                        <li
-                          key={item.label}
-                          className="flex items-center space-x-2 text-xs"
-                          aria-label={`${item.label}: ${item.valid ? "met" : "not met"}`}
-                        >
-                          {item.valid ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0" />
-                          )}
-                          <span
-                            className={
-                              item.valid
-                                ? "text-green-600 dark:text-green-500 font-medium"
-                                : "text-muted-foreground"
-                            }
-                          >
-                            {item.label}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
                   <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
             />
 
-            {/* Terms and Conditions Checkbox */}
+            {/* Confirm Password */}
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={!!fieldState.error}>
+                  <FieldLabel>
+                    Confirm Password <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <PasswordInput
+                    {...field}
+                    placeholder="Re-enter your password"
+                    className="h-11"
+                    aria-invalid={!!fieldState.error}
+                  />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+
             <Controller
               name="acceptTerms"
               control={control}
               render={({ field, fieldState }) => (
-                <Field
-                  orientation="horizontal"
+                <div
                   data-invalid={!!fieldState.error}
-                  className="items-start"
+                  className="flex flex-col space-y-2"
                 >
-                  <Checkbox
-                    id="acceptTerms"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    aria-invalid={!!fieldState.error}
-                    className="mt-1"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <FieldLabel
-                      htmlFor="acceptTerms"
-                      className="font-normal text-sm leading-none"
-                    >
+                  <label
+                    htmlFor="acceptTerms"
+                    className={cn(
+                      "flex items-start gap-3 sm:items-center sm:flex-row text-sm cursor-pointer select-none",
+                    )}
+                  >
+                    <Checkbox
+                      id="acceptTerms"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      aria-invalid={!!fieldState.error}
+                      className="mt-0.5 sm:mt-0 flex-shrink-0"
+                    />
+
+                    <span className="leading-snug text-muted-foreground">
                       I accept the{" "}
-                      <a
+                      <Link
                         href="/terms"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -400,9 +238,9 @@ export function SignUpForm() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         Terms and Conditions
-                      </a>{" "}
+                      </Link>{" "}
                       and{" "}
-                      <a
+                      <Link
                         href="/privacy"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -410,36 +248,36 @@ export function SignUpForm() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         Privacy Policy
-                      </a>
-                    </FieldLabel>
-                    <FieldError errors={[fieldState.error]} />
-                  </div>
-                </Field>
+                      </Link>
+                    </span>
+                  </label>
+
+                  {fieldState.error && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error.message}
+                    </p>
+                  )}
+                </div>
               )}
             />
           </FieldGroup>
-
-          {/* Submit Button */}
           <Button
             type="submit"
             size="lg"
             className="w-full h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-            disabled={
-              isSubmitting || !isValid || !allCriteriaValid || !acceptTerms
-            }
+            disabled={isSignUpPending}
           >
-            {isSubmitting ? (
+            {isSignUpPending ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Creating Account...
+                <span>Creating Account...</span>
               </>
             ) : (
-              "Create Account"
+              <span>Create Account</span>
             )}
           </Button>
         </form>
       </CardContent>
-
       <CardFooter className="flex flex-col space-y-4 pb-6">
         <div className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
@@ -450,8 +288,6 @@ export function SignUpForm() {
             Sign In
           </a>
         </div>
-
-        {/* Additional Links */}
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <a href="/help" className="hover:text-foreground transition-colors">
             Need Help?

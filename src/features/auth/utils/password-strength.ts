@@ -1,33 +1,38 @@
-export function validatePasswordStrength(password: string) {
-  const checks = {
-    length: password.length >= 8,
-    lowercase: /[a-z]/.test(password),
-    uppercase: /[A-Z]/.test(password),
-    number: /\d/.test(password),
-    special: /[^A-Za-z0-9]/.test(password),
-  };
+// src\features\auth\utils\password-strength.ts
 
-  const passedCount = Object.values(checks).filter(Boolean).length;
-
-  let strength: "weak" | "medium" | "strong" = "weak";
-  if (passedCount >= 4) strength = "strong";
-  else if (passedCount >= 2) strength = "medium";
-
+export function getPasswordCriteria(password: string) {
   return {
-    checks, // detailed pass/fail per rule
-    strength, // "weak" | "medium" | "strong"
-    score: passedCount, // 0–5
-    isValid: passedCount === 5, // all conditions passed
+    hasMinLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[^A-Za-z0-9]/.test(password),
   };
 }
 
-export function getPasswordStrengthColor(strength: "weak" | "medium" | "strong") {
-  switch (strength) {
-    case "weak":
-      return "red";
-    case "medium":
-      return "yellow";
-    case "strong":
-      return "green";
-  }
+export function getPasswordStrengthScore(criteria: Record<string, boolean>) {
+  return Object.values(criteria).reduce((acc, valid) => acc + (valid ? 1 : 0), 0);
+}
+
+export function getPasswordStrengthConfig(score: number) {
+  if (score <= 2)
+    return {
+      label: "Weak",
+      color: "bg-red-500",
+      textColor: "text-red-600",
+      width: "w-1/3",
+    };
+  if (score <= 4)
+    return {
+      label: "Moderate",
+      color: "bg-yellow-500",
+      textColor: "text-yellow-600",
+      width: "w-2/3",
+    };
+  return {
+    label: "Strong",
+    color: "bg-green-500",
+    textColor: "text-green-600",
+    width: "w-full",
+  };
 }
